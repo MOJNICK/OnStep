@@ -122,8 +122,9 @@ void timerSupervisor(bool isCentiSecond) {
 
     // guide rate acceleration/deceleration and control
     if (guideDirAxis1) {
-      if ((fabs(guideTimerRateAxis1) < 10.0) && (fabs(guideTimerRateAxis1A) < 10.0)) {
+      if ((fabs(guideTimerRateAxis1) < 80.0) && (fabs(guideTimerRateAxis1A) < 80.0)) {
         // slow speed guiding, no acceleration
+        axis1DriverTrackingMode(false);
         guideTimerRateAxis1A=guideTimerRateAxis1;
         // break
         if (guideDirAxis1 == 'b') { guideDirAxis1=0; guideTimerRateAxis1=0.0; guideTimerRateAxis1A=0.0; }
@@ -165,8 +166,9 @@ void timerSupervisor(bool isCentiSecond) {
  
     // guide rate acceleration/deceleration
     if (guideDirAxis2) {
-      if ((fabs(guideTimerRateAxis2) < 10.0) && (fabs(guideTimerRateAxis2A) < 10.0)) {
+      if ((fabs(guideTimerRateAxis2) < 80.0) && (fabs(guideTimerRateAxis2A) < 80.0)) {
         // slow speed guiding, no acceleration
+        axis1DriverTrackingMode(false);
         guideTimerRateAxis2A=guideTimerRateAxis2; 
         // break mode
         if (guideDirAxis2 == 'b') { guideDirAxis2=0; guideTimerRateAxis2=0.0; guideTimerRateAxis2A=0.0; }
