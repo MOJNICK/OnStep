@@ -124,14 +124,24 @@ void timerSupervisor(bool isCentiSecond) {
     if (guideDirAxis1) {
       if ((fabs(guideTimerRateAxis1) < 80.0) && (fabs(guideTimerRateAxis1A) < 80.0)) {
         // slow speed guiding, no acceleration
-        axis1DriverTrackingMode(false);
+        //axis1DriverTrackingMode(false);
         guideTimerRateAxis1A=guideTimerRateAxis1;
         // break
         if (guideDirAxis1 == 'b') { guideDirAxis1=0; guideTimerRateAxis1=0.0; guideTimerRateAxis1A=0.0; }
       } else {
         if ((isCentiSecond) && (!inbacklashAxis1)) {
           // high speed guiding
+          /*if ((fabs(guideTimerRateAxis1) < 780.0) && (fabs(guideTimerRateAxis1A) < 780.0)) {
+            //ratio = guideTimerRateAxis1/maxRateBaseDesired //step time ratio
+            //axis1SettingsEx.IGOTO = config_h_igoto * ratio;
+            axis1SettingsEx.IGOTO = AXIS1_DRIVER_IGOTO/4;
+          } else {
+            axis1SettingsEx.IGOTO = AXIS1_DRIVER_IGOTO;
+          }
+            //if igoto < itracking -> igoto = itrcking
+            //if igot > igoto_conf ->igoto - igoto_conf
           axis1DriverGotoMode();
+          */
 
           // at higher step rates where torque is reduced make smaller rate changes
           double r=1.2-sqrt((fabs(guideTimerRateAxis1A)/slewRateX));
@@ -168,14 +178,20 @@ void timerSupervisor(bool isCentiSecond) {
     if (guideDirAxis2) {
       if ((fabs(guideTimerRateAxis2) < 80.0) && (fabs(guideTimerRateAxis2A) < 80.0)) {
         // slow speed guiding, no acceleration
-        axis1DriverTrackingMode(false);
+        //axis2DriverTrackingMode(false);
         guideTimerRateAxis2A=guideTimerRateAxis2; 
         // break mode
         if (guideDirAxis2 == 'b') { guideDirAxis2=0; guideTimerRateAxis2=0.0; guideTimerRateAxis2A=0.0; }
       } else {
         if ((isCentiSecond) && (!inbacklashAxis2)) {
           // use acceleration
+          /*if ((fabs(guideTimerRateAxis2) < 780.0) && (fabs(guideTimerRateAxis2A) < 780.0)) {
+            axis2SettingsEx.IGOTO = AXIS1_DRIVER_IGOTO/3.0;
+          } else {
+            axis2SettingsEx.IGOTO = AXIS1_DRIVER_IGOTO;
+          }
           axis2DriverGotoMode();
+          */
   
           // at higher step rates where torque is reduced make smaller rate changes
           double r=1.2-sqrt((fabs(guideTimerRateAxis2A)/slewRateX));
@@ -217,17 +233,73 @@ void timerSupervisor(bool isCentiSecond) {
   // override rate during backlash compensation
   if (inbacklashAxis2) thisTimerRateAxis2=timerRateBacklashAxis2;
 
-  // trigger goto step mode
+  /*// trigger goto step mode
 #if defined(AXIS1_DRIVER_CODE) && defined(AXIS1_DRIVER_CODE_GOTO) && MODE_SWITCH_BEFORE_SLEW == OFF
   gotoRateAxis1=(thisTimerRateAxis1 < AXIS1_DRIVER_SWITCH_RATE);
 #endif
 #if defined(AXIS2_DRIVER_CODE) && defined(AXIS2_DRIVER_CODE_GOTO) && MODE_SWITCH_BEFORE_SLEW == OFF
   gotoRateAxis2=(thisTimerRateAxis2 < AXIS2_DRIVER_SWITCH_RATE);
-#endif
+#endif*/
+{
+  uint16_t l_ax1_intervalms = thisTimerRateAxis1* AXIS1_DRIVER_MICROSTEPS / 16 / 1000;
+  uint16_t l_ax1_current;
+  if (l_ax1_intervalms<5) {
+    if(l_ax1_intervalms)
+      l_ax1_current = AXIS1_DRIVER_IGOTO / l_ax1_intervalms *3/4;
+    else{
+      l_ax1_current = AXIS1_DRIVER_IGOTO;
+      _a1trk = true;//hack
+    }
 
+    if(l_ax1_current > axis1SettingsEx.IGOTO) {
+      if(l_ax1_current - axis1SettingsEx.IGOTO > 200)
+        _a1trk = true;//hack
+    } else {
+      if(axis1SettingsEx.IGOTO - l_ax1_current > 200)
+        _a1trk = true;//hack
+    }
+
+    axis1SettingsEx.IGOTO = l_ax1_current;
+    axis1DriverGotoMode();
+    gotoRateAxis1 = true;
+  }
+  else {
+    axis1DriverTrackingMode(false);
+    gotoRateAxis1 = false;
+  }
+}
+{
+  uint16_t l_ax2_intervalms = thisTimerRateAxis2* AXIS2_DRIVER_MICROSTEPS / 16 / 1000;
+  uint16_t l_ax2_current;
+  if (l_ax2_intervalms<5) {
+    if(l_ax2_intervalms)
+      l_ax2_current = AXIS2_DRIVER_IGOTO / l_ax2_intervalms *3/4;
+    else{
+      l_ax2_current = AXIS2_DRIVER_IGOTO;
+      _a2trk = true;//hack
+    }
+
+    if(l_ax2_current > axis2SettingsEx.IGOTO) {
+      if(l_ax2_current - axis2SettingsEx.IGOTO > 200)
+        _a2trk = true;//hack
+    } else {
+      if(axis2SettingsEx.IGOTO - l_ax2_current > 200)
+        _a2trk = true;//hack
+    }
+
+    axis2SettingsEx.IGOTO = l_ax2_current;
+    axis2DriverGotoMode();
+    gotoRateAxis2 = true;
+  }
+  else {
+    axis2DriverTrackingMode(false);
+    gotoRateAxis2 = false;
+  }
+}
   // set the rates
   if (thisTimerRateAxis1 != isrTimerRateAxis1) {
 #if defined(AXIS1_DRIVER_CODE_GOTO)
+
     PresetTimerInterval((thisTimerRateAxis1/ppsRateRatio)*axis1StepsGoto, TIMER_PULSE_STEP, &nextAxis1GotoRate, &nextAxis1GotoRep);
 #endif
     PresetTimerInterval(thisTimerRateAxis1/ppsRateRatio, TIMER_PULSE_STEP, &nextAxis1Rate, &nextAxis1Rep);
@@ -235,6 +307,7 @@ void timerSupervisor(bool isCentiSecond) {
   }
   if (thisTimerRateAxis2 != isrTimerRateAxis2) {
 #if defined(AXIS2_DRIVER_CODE_GOTO)
+    
     PresetTimerInterval((thisTimerRateAxis2/ppsRateRatio)*axis2StepsGoto, TIMER_PULSE_STEP, &nextAxis2GotoRate, &nextAxis2GotoRep);
 #endif
     PresetTimerInterval(thisTimerRateAxis2/ppsRateRatio, TIMER_PULSE_STEP, &nextAxis2Rate, &nextAxis2Rep);
