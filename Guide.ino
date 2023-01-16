@@ -149,7 +149,6 @@ CommandErrors startGuideAxis1(char direction, int guideRate, long guideDuration,
   if (trackingSyncInProgress())           return CE_MOUNT_IN_MOTION;
   if (trackingState == TrackingMoveTo)    return CE_MOUNT_IN_MOTION;
   if (isSpiralGuiding())                  return CE_MOUNT_IN_MOTION;
-  if (direction == guideDirAxis1)         return CE_NONE;
   if (direction == 'e' && !guideEastOk()) return CE_SLEW_ERR_OUTSIDE_LIMITS;
   if (direction == 'w' && !guideWestOk()) return CE_SLEW_ERR_OUTSIDE_LIMITS;
   if (guideRate < 3 && (generalError == ERR_ALT_MIN ||
@@ -186,7 +185,6 @@ CommandErrors startGuideAxis2(char direction, int guideRate, long guideDuration,
   if (trackingSyncInProgress())            return CE_MOUNT_IN_MOTION;
   if (trackingState == TrackingMoveTo)     return CE_MOUNT_IN_MOTION;
   if (isSpiralGuiding())                   return CE_MOUNT_IN_MOTION;
-  if (direction == guideDirAxis2)          return CE_NONE;
   if (direction == 'n' && !guideNorthOk()) return CE_SLEW_ERR_OUTSIDE_LIMITS;
   if (direction == 's' && !guideSouthOk()) return CE_SLEW_ERR_OUTSIDE_LIMITS;
   if (guideRate < 3 && (generalError == ERR_ALT_MIN ||
